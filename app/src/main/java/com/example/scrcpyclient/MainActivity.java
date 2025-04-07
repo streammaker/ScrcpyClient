@@ -8,6 +8,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.scrcpyclient.connection.ClientSocketThread;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,18 +29,8 @@ public class MainActivity extends AppCompatActivity {
         connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
-                    Socket clientSocket = new Socket(ipText.toString(), Integer.valueOf(portText.toString()));
-                    InputStream inputStream = clientSocket.getInputStream();
-                    OutputStream outputStream = clientSocket.getOutputStream();
-                    byte[] buffer = new byte[1024];
-                    int bytesRead = inputStream.read(buffer);
-                    String deviceName = new String(buffer, 0, bytesRead);
-                    receiveData.setText(deviceName);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
+                ClientSocketThread clientSocketThread = new ClientSocketThread(ipText.getText().toString(), Integer.valueOf(portText.getText().toString()));
+                clientSocketThread.start();
             }
         });
     }
