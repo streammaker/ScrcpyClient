@@ -21,4 +21,7 @@ public class ClientSocketHelper {
         videoOutputStream = videoSocket.getOutputStream();
         return new ClientSocketHelper(videoSocket);
     }
+    public Boolean isClosed() {
+        return videoSocket.isClosed();
+    }
 }
