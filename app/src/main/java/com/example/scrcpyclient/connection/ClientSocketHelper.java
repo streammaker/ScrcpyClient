@@ -1,5 +1,7 @@
 package com.example.scrcpyclient.connection;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,7 +10,7 @@ import java.net.Socket;
 public class ClientSocketHelper {
 
     private static final String TAG = ClientSocketHelper.class.getSimpleName();
-    private final Socket videoSocket;
+    private static Socket videoSocket;
     public static InputStream videoInputStream;
     public static OutputStream videoOutputStream;
 
@@ -23,5 +25,25 @@ public class ClientSocketHelper {
     }
     public Boolean isClosed() {
         return videoSocket.isClosed();
+    }
+
+    public static void releaseResource() {
+        try {
+            Log.d(TAG, "releaseResource");
+            if (videoInputStream != null) {
+                videoInputStream.close();
+                videoInputStream = null;
+            }
+            if (videoOutputStream != null) {
+                videoOutputStream.close();
+                videoOutputStream = null;
+            }
+            if (videoSocket != null && !videoSocket.isClosed()) {
+                videoSocket.close();
+                videoSocket = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

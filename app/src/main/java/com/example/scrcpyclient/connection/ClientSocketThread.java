@@ -1,11 +1,14 @@
 package com.example.scrcpyclient.connection;
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceView;
+
+import com.example.scrcpyclient.util.Constant;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -14,14 +17,11 @@ import java.nio.ByteBuffer;
 public class ClientSocketThread extends Thread {
 
     private static final String TAG = ClientSocketThread.class.getSimpleName();
+    private Context context;
     private final String ip;
     private final int port;
     private Handler handler;
     private SurfaceView surfaceView;
-    private static final int DEVICE_NAME_REPLY = 1;
-    private static final int SCREEN_WIDTH = 1920;
-    private static final int SCREEN_HEIGHT = 1080;
-    private static final int DECODER_TIMEOUT_US = 10000;
     // 解码器
     private MediaCodec mDecoder;
     DataInputStream dis;
@@ -36,13 +36,12 @@ public class ClientSocketThread extends Thread {
     public void run() {
         try {
             connection = ClientSocketHelper.connect(ip, port);
-//            int bytesRead = 0;
             byte[] buffer = new byte[1024];
             int bytesRead = ClientSocketHelper.videoInputStream.read(buffer);
             String deviceName = new String(buffer, 0, bytesRead);
             Log.d(TAG, "receive data : " + deviceName);
             Message message = new Message();
-            message.what = DEVICE_NAME_REPLY;
+            message.what = Constant.DEVICE_NAME_REPLY;
             message.obj = deviceName;
             handler.sendMessage(message);
             dis = new DataInputStream(ClientSocketHelper.videoInputStream);
@@ -50,6 +49,7 @@ public class ClientSocketThread extends Thread {
             initializeDecoder();
 
             while (mIsReceiving && !connection.isClosed()) {
+                Log.d(TAG, "prepare receive video data");
                 processNetworkPacket();
             }
 
@@ -59,14 +59,19 @@ public class ClientSocketThread extends Thread {
 //                Log.d(TAG, "receive data : " + deviceName);
 //            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            Message message = new Message();
+            message.what = Constant.DISCONNECT_SERVER;
+            handler.sendMessage(message);
+            releaseDecoder();
+            ClientSocketHelper.releaseResource();
+            e.printStackTrace();
         }
     }
 
     private void initializeDecoder() {
         try {
             MediaFormat format = MediaFormat.createVideoFormat(
-                    MediaFormat.MIMETYPE_VIDEO_AVC, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    MediaFormat.MIMETYPE_VIDEO_AVC, Constant.SCREEN_WIDTH, Constant.SCREEN_HEIGHT);
             mDecoder = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
             mDecoder.configure(format, surfaceView.getHolder().getSurface(), null, 0);
             mDecoder.start();
@@ -86,7 +91,7 @@ public class ClientSocketThread extends Thread {
     private void feedDataToDecoder(byte[] data) {
         if (mDecoder == null) return;
         try {
-            int inputBufferIndex = mDecoder.dequeueInputBuffer(DECODER_TIMEOUT_US);
+            int inputBufferIndex = mDecoder.dequeueInputBuffer(Constant.DECODER_TIMEOUT_US);
             if (inputBufferIndex >= 0) {
                 ByteBuffer inputBuffer = mDecoder.getInputBuffer(inputBufferIndex);
                 inputBuffer.put(data);
@@ -107,12 +112,13 @@ public class ClientSocketThread extends Thread {
     private void renderDecodedFrames() {
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         int outputBufferIndex;
-        while ((outputBufferIndex = mDecoder.dequeueOutputBuffer(bufferInfo, DECODER_TIMEOUT_US)) >= 0) {
+        while ((outputBufferIndex = mDecoder.dequeueOutputBuffer(bufferInfo, Constant.DECODER_TIMEOUT_US)) >= 0) {
             mDecoder.releaseOutputBuffer(outputBufferIndex, true);
         }
     }
 
-    public void initComponent(SurfaceView surfaceView) {
+    public void initComponent(Context context, SurfaceView surfaceView) {
+        this.context = context;
         this.surfaceView = surfaceView;
     }
 
