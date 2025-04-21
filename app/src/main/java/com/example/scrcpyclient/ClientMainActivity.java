@@ -61,21 +61,33 @@ public class ClientMainActivity extends AppCompatActivity {
                 }
             }
         });
-        connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String serverIP = ipText.getText().toString();
-                tcpHelper = new TcpHelper(serverIP);
-                tcpHelper.init();
-                udpHelper = new UdpHelper(serverIP, context, launcher);
-                udpHelper.init();
-            }
+        connect.setOnClickListener(view -> {
+            String serverIP = ipText.getText().toString();
+            tcpHelper = new TcpHelper(serverIP, context);
+            tcpHelper.init();
+            udpHelper = new UdpHelper(serverIP, context, launcher);
+            udpHelper.init();
         });
     }
 
     private void init() {
-        connect = findViewById(R.id.connect1);
+        connect = findViewById(R.id.connect);
         ipText = findViewById(R.id.ipText);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy()");
+
+//        待处理，退出应用后仍然可以捕获屏幕
+//        if (tcpHelper != null) {
+//            tcpHelper.releaseResource();
+//            tcpHelper = null;
+//        }
+//        if (udpHelper != null) {
+//            udpHelper.releaseResource();
+//            udpHelper = null;
+//        }
+    }
 }

@@ -32,6 +32,21 @@ public class UdpSendThread extends Thread {
             Log.d(TAG, "UdpSendThread 发送设备名字成功");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            releaseResource();
         }
     }
+
+    public void stopRunning() {
+        releaseResource();
+    }
+
+    private void releaseResource() {
+        Log.d(TAG, "releaseResource()");
+        if (datagramSocket != null && !datagramSocket.isClosed()) {
+            datagramSocket.close();
+            datagramSocket = null;
+        }
+    }
+
 }

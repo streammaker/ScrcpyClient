@@ -1,10 +1,12 @@
 package com.example.scrcpyclient.connection;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
 
 public class UdpHelper {
+    private static final String TAG = UdpHelper.class.getSimpleName();
 
     private String ip;
     private Context context;
@@ -23,6 +25,25 @@ public class UdpHelper {
         udpSendThread.start();
         udpReceiveThread = new UdpReceiveThread(context, launcher);
         udpReceiveThread.start();
+    }
+
+    public void releaseResource() {
+        try {
+            if (udpSendThread != null) {
+                udpSendThread.stopRunning();
+                udpSendThread.join();
+                udpSendThread = null;
+                Log.d(TAG, "udpSendThread releaseResource()");
+            }
+            if (udpReceiveThread != null) {
+                udpReceiveThread.stopRunning();
+                udpReceiveThread.join();
+                udpReceiveThread = null;
+                Log.d(TAG, "udpReceiveThread releaseResource()");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

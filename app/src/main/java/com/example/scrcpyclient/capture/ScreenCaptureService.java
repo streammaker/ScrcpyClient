@@ -79,6 +79,26 @@ public class ScreenCaptureService extends Service  {
                 .build();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy()");
+        if (screenCaptureThread != null) {
+            screenCaptureThread.quit();
+        }
+        try {
+            screenCaptureThread.join();
+            Log.d(TAG, "screenCaptureThread.join() !!!");
+        } catch (Exception e) {
+            Log.d(TAG, "screenCaptureThread.join() error !!!");
+            e.printStackTrace();
+        }
+        if (mediaProjection != null) {
+            mediaProjection.stop();
+            mediaProjection = null;
+        }
+    }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

@@ -22,7 +22,7 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/connect1"
+        android:id="@+id/connect"
         android:text="Connect"
         android:layout_gravity="center"
         android:layout_width="wrap_content"

@@ -1,12 +1,15 @@
 package com.example.scrcpyclient.connection;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
 
+import com.example.scrcpyclient.capture.ScreenCaptureService;
 import com.example.scrcpyclient.util.Constant;
+import com.example.scrcpyclient.util.Util;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -14,6 +17,7 @@ import java.util.Arrays;
 
 public class UdpReceiveThread extends Thread {
     private static final String TAG = UdpReceiveThread.class.getSimpleName();
+    private volatile boolean isRunning = true;
     private Context context;
     private ActivityResultLauncher launcher;
     private MediaProjectionManager mediaProjectionManager;
@@ -29,7 +33,7 @@ public class UdpReceiveThread extends Thread {
     public void run() {
         try {
             datagramSocket = new DatagramSocket(Constant.UDP_RECEIVE_PORT);
-            while (true) {
+            while (isRunning) {
                 byte[] container = new byte[1024];
                 datagramPacket = new DatagramPacket(container, container.length);
                 datagramSocket.receive(datagramPacket);
@@ -39,6 +43,8 @@ public class UdpReceiveThread extends Thread {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            releaseResource();
         }
     }
 
@@ -57,9 +63,30 @@ public class UdpReceiveThread extends Thread {
             byte content = data[position++];
             if (content == 0x01) {
                 //开启屏幕捕获
+                Log.d(TAG, "开启屏幕捕获");
                 mediaProjectionManager = (MediaProjectionManager) context.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                 launcher.launch(mediaProjectionManager.createScreenCaptureIntent());
+            } else if (content == 0x02) {
+                //停止屏幕捕获
+                Log.d(TAG, "停止屏幕捕获");
+                if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
+                    Intent intent = new Intent(context, ScreenCaptureService.class);
+                    context.stopService(intent);
+                }
             }
+        }
+    }
+
+    public void stopRunning() {
+        isRunning = false;
+        releaseResource();
+    }
+
+    private void releaseResource() {
+        Log.d(TAG, "releaseResource()");
+        if (datagramSocket != null && !datagramSocket.isClosed()) {
+            datagramSocket.close();
+            datagramSocket = null;
         }
     }
 
