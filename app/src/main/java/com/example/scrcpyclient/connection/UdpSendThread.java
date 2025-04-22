@@ -30,6 +30,16 @@ public class UdpSendThread extends Thread {
             datagramPacket = new DatagramPacket(data, 0, data.length, InetAddress.getByName(ip), Constant.UDP_SEND_PORT);
             datagramSocket.send(datagramPacket);
             Log.d(TAG, "UdpSendThread 发送设备名字成功");
+
+            //udp传输测试
+            DatagramSocket datagramSocket1 = new DatagramSocket(Constant.UDP_RECEIVE_PORT);
+            byte[] container = new byte[1024];
+            DatagramPacket datagramPacket1 = new DatagramPacket(container, container.length);
+            datagramSocket1.receive(datagramPacket1);
+            byte[] data1 = datagramPacket1.getData();
+            int len = datagramPacket1.getLength();
+            String msg = new String(data1, 0, len);
+            Log.d(TAG, "receive data : " + msg);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

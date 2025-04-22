@@ -163,6 +163,7 @@ public class ScreenCaptureThread extends Thread {
                 mediaProjection.stop();
                 mediaProjection = null;
             }
+            //待处理
 //            if (dos != null) {
 //                dos.close();
 //                dos = null;

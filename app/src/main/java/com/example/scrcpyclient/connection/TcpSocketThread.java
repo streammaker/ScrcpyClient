@@ -10,7 +10,11 @@ import com.example.scrcpyclient.capture.ScreenCaptureService;
 import com.example.scrcpyclient.util.Constant;
 import com.example.scrcpyclient.util.Util;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 
 public class TcpSocketThread extends Thread {
@@ -35,6 +39,19 @@ public class TcpSocketThread extends Thread {
             socket = new Socket(ip, Constant.TCP_SEND_PORT);
             videoOutputStream = socket.getOutputStream();
             TcpHelper.saveServerInfo(videoOutputStream);
+
+            //tcp传输测试
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            String line = "";
+            Log.d(TAG, "tcp传输测试");
+            if ((line = bufferedReader.readLine()) != null) {
+                Log.d(TAG, "data : " + line);
+            }
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(videoOutputStream));
+            bufferedWriter.write("这是客户端发来的tcp测试数据");
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+
             Looper.loop();
         } catch (Exception e) {
             e.printStackTrace();

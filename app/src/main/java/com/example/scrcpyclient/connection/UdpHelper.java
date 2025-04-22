@@ -23,8 +23,8 @@ public class UdpHelper {
     public void init() {
         udpSendThread = new UdpSendThread(ip);
         udpSendThread.start();
-        udpReceiveThread = new UdpReceiveThread(context, launcher);
-        udpReceiveThread.start();
+//        udpReceiveThread = new UdpReceiveThread(context, launcher);
+//        udpReceiveThread.start();
     }
 
     public void releaseResource() {
