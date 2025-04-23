@@ -3,7 +3,7 @@ package com.example.scrcpyclient.connection;
 import android.content.Context;
 import android.util.Log;
 
-import com.example.scrcpyclient.ClientMainActivity;
+import androidx.activity.result.ActivityResultLauncher;
 
 import java.io.OutputStream;
 
@@ -12,26 +12,37 @@ public class TcpHelper {
 
     private String ip;
     private Context context;
-    private TcpSocketThread tcpSocketThread;
+    private ActivityResultLauncher launcher;
+    private TcpContactThread tcpContactThread;
+    private TcpVideoThread tcpVideoThread;
     public static OutputStream videoOutputStream;
 
-    public TcpHelper(String ip, Context context) {
+    public TcpHelper(String ip, Context context, ActivityResultLauncher launcher) {
         this.ip = ip;
         this.context = context;
+        this.launcher = launcher;
     }
 
     public void init() {
-        tcpSocketThread = new TcpSocketThread(ip, context);
-        tcpSocketThread.start();
+        tcpContactThread = new TcpContactThread(ip, context, launcher);
+        tcpContactThread.start();
+        tcpVideoThread = new TcpVideoThread(ip, context);
+        tcpVideoThread.start();
     }
 
     public void releaseResource() {
         try {
-            if (tcpSocketThread != null) {
-                tcpSocketThread.stopRunning();
-                tcpSocketThread.join();
-                tcpSocketThread = null;
-                Log.d(TAG, "tcpSocketThread releaseResource()");
+            if (tcpContactThread != null) {
+                tcpContactThread.stopRunning();
+                tcpContactThread.join();
+                tcpContactThread = null;
+                Log.d(TAG, "tcpContactThread releaseResource()");
+            }
+            if (tcpVideoThread != null) {
+                tcpVideoThread.stopRunning();
+                tcpVideoThread.join();
+                tcpVideoThread = null;
+                Log.d(TAG, "tcpVideoThread releaseResource()");
             }
         } catch (Exception e) {
             e.printStackTrace();

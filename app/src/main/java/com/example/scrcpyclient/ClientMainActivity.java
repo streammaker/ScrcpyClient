@@ -20,7 +20,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.scrcpyclient.capture.ScreenCaptureService;
 import com.example.scrcpyclient.connection.TcpHelper;
-import com.example.scrcpyclient.connection.UdpHelper;
 import com.example.scrcpyclient.util.Constant;
 import com.example.scrcpyclient.util.Util;
 
@@ -31,7 +30,6 @@ public class ClientMainActivity extends AppCompatActivity {
     private Button connect;
     private EditText ipText;
     private TcpHelper tcpHelper;
-    private UdpHelper udpHelper;
     private ActivityResultLauncher launcher;
 
     @Override
@@ -63,10 +61,8 @@ public class ClientMainActivity extends AppCompatActivity {
         });
         connect.setOnClickListener(view -> {
             String serverIP = ipText.getText().toString();
-            tcpHelper = new TcpHelper(serverIP, context);
+            tcpHelper = new TcpHelper(serverIP, context, launcher);
             tcpHelper.init();
-            udpHelper = new UdpHelper(serverIP, context, launcher);
-            udpHelper.init();
         });
     }
 
@@ -84,10 +80,6 @@ public class ClientMainActivity extends AppCompatActivity {
 //        if (tcpHelper != null) {
 //            tcpHelper.releaseResource();
 //            tcpHelper = null;
-//        }
-//        if (udpHelper != null) {
-//            udpHelper.releaseResource();
-//            udpHelper = null;
 //        }
     }
 }

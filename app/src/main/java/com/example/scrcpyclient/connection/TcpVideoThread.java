@@ -17,8 +17,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-public class TcpSocketThread extends Thread {
-    private static final String TAG = TcpSocketThread.class.getSimpleName();
+public class TcpVideoThread extends Thread {
+    private static final String TAG = TcpVideoThread.class.getSimpleName();
 
     private String ip;
     private Context context;
@@ -26,7 +26,7 @@ public class TcpSocketThread extends Thread {
     private Socket socket;
     private OutputStream videoOutputStream;
 
-    public TcpSocketThread(String ip, Context context) {
+    public TcpVideoThread(String ip, Context context) {
         this.ip = ip;
         this.context = context;
     }
@@ -36,25 +36,15 @@ public class TcpSocketThread extends Thread {
         try {
             Looper.prepare();
             handler = new Handler(Looper.myLooper());
-            socket = new Socket(ip, Constant.TCP_SEND_PORT);
+            socket = new Socket(ip, Constant.TCP_VIDEO_SEND_PORT);
             videoOutputStream = socket.getOutputStream();
             TcpHelper.saveServerInfo(videoOutputStream);
-
-            //tcp传输测试
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String line = "";
-            Log.d(TAG, "tcp传输测试");
-            if ((line = bufferedReader.readLine()) != null) {
-                Log.d(TAG, "data : " + line);
-            }
-            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(videoOutputStream));
-            bufferedWriter.write("这是客户端发来的tcp测试数据");
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
-
             Looper.loop();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            Log.d(TAG, "run() releaseResource");
+            releaseResource();
         }
     }
 
