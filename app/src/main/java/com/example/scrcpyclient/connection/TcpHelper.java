@@ -14,8 +14,9 @@ public class TcpHelper {
     private Context context;
     private ActivityResultLauncher launcher;
     private TcpContactThread tcpContactThread;
-    private TcpVideoThread tcpVideoThread;
+//    private TcpVideoThread tcpVideoThread;
     public static OutputStream videoOutputStream;
+    public static String videoServerIp;
 
     public TcpHelper(String ip, Context context, ActivityResultLauncher launcher) {
         this.ip = ip;
@@ -26,8 +27,8 @@ public class TcpHelper {
     public void init() {
         tcpContactThread = new TcpContactThread(ip, context, launcher);
         tcpContactThread.start();
-        tcpVideoThread = new TcpVideoThread(ip, context);
-        tcpVideoThread.start();
+//        tcpVideoThread = new TcpVideoThread(ip, context);
+//        tcpVideoThread.start();
     }
 
     public void releaseResource() {
@@ -38,12 +39,12 @@ public class TcpHelper {
                 tcpContactThread = null;
                 Log.d(TAG, "tcpContactThread releaseResource()");
             }
-            if (tcpVideoThread != null) {
-                tcpVideoThread.stopRunning();
-                tcpVideoThread.join();
-                tcpVideoThread = null;
-                Log.d(TAG, "tcpVideoThread releaseResource()");
-            }
+//            if (tcpVideoThread != null) {
+//                tcpVideoThread.stopRunning();
+//                tcpVideoThread.join();
+//                tcpVideoThread = null;
+//                Log.d(TAG, "tcpVideoThread releaseResource()");
+//            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -51,6 +52,10 @@ public class TcpHelper {
 
     public static void saveServerInfo(OutputStream outputStream) {
         videoOutputStream = outputStream;
+    }
+
+    public static void saveVideoServerIp(String ip) {
+        videoServerIp = ip;
     }
 
     public static void releaseStreamResource() {

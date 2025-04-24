@@ -30,7 +30,9 @@ public class TcpContactThread extends Thread {
     private InputStream contactInputStream;
     private OutputStream contactOutputStream;
     private volatile boolean isRunning = true;
+    private boolean isFirst = true;
     private MediaProjectionManager mediaProjectionManager;
+    private TcpVideoThread tcpVideoThread;
 
     public TcpContactThread(String ip, Context context, ActivityResultLauncher launcher) {
         this.ip = ip;
@@ -49,8 +51,17 @@ public class TcpContactThread extends Thread {
             while (isRunning) {
                 byte[] receiveData = new byte[1024];
                 int len = contactInputStream.read(receiveData);
-                byte[] contentData = Arrays.copyOfRange(receiveData, 0, len);
-                checkData(contentData, len);
+                if (isFirst) {
+                    String videoServerIp = new String(receiveData, 0, len);
+                    Log.d(TAG, "收到video服务器ip : " + videoServerIp);
+                    TcpHelper.saveVideoServerIp(videoServerIp);
+                    tcpVideoThread = new TcpVideoThread(ip, context);
+                    tcpVideoThread.start();
+                    isFirst = false;
+                } else {
+                    byte[] contentData = Arrays.copyOfRange(receiveData, 0, len);
+                    checkData(contentData, len);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -98,6 +109,12 @@ public class TcpContactThread extends Thread {
     private void releaseResource() {
         Log.d(TAG, "releaseResource()");
         try {
+            if (tcpVideoThread != null) {
+                tcpVideoThread.stopRunning();
+                tcpVideoThread.join();
+                tcpVideoThread = null;
+                Log.d(TAG, "tcpVideoThread releaseResource()");
+            }
             if (contactOutputStream != null) {
                 contactOutputStream.close();
                 contactOutputStream = null;

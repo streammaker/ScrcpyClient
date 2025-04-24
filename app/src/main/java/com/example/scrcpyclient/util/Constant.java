@@ -11,5 +11,6 @@ public class Constant {
 
     public static final int SCREEN_WIDTH = 1920;
     public static final int SCREEN_HEIGHT = 1080;
+//    public static final int BIT_RATE = 100_000;
     public static final int BIT_RATE = 2_000_000;
 }

@@ -38,25 +38,22 @@ public class ClientMainActivity extends AppCompatActivity {
         setContentView(R.layout.client_layout);
         context = this;
         init();
-        launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-            @Override
-            public void onActivityResult(ActivityResult result) {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
-                        Toast.makeText(context, "屏幕捕获服务已开启...", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "screenCaptureService has started");
-                    } else {
-                        Log.d(TAG, "开始屏幕捕获");
-                        Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
-                        serviceIntent.setAction("ACTION_START_CAPTURE");
-                        serviceIntent.putExtra("result_code", result.getResultCode());
-                        serviceIntent.putExtra("result_data", result.getData());
-                        startService(serviceIntent);
-                    }
+        launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                if (Util.isServiceRunning(context, Constant.SCREENCAPTURESERVICE)) {
+                    Toast.makeText(context, "屏幕捕获服务已开启...", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "screenCaptureService has started");
                 } else {
-                    Toast.makeText(context, "授权失败", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "授权失败");
+                    Log.d(TAG, "开始屏幕捕获");
+                    Intent serviceIntent = new Intent(context, ScreenCaptureService.class);
+                    serviceIntent.setAction("ACTION_START_CAPTURE");
+                    serviceIntent.putExtra("result_code", result.getResultCode());
+                    serviceIntent.putExtra("result_data", result.getData());
+                    startService(serviceIntent);
                 }
+            } else {
+                Toast.makeText(context, "授权失败", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "授权失败");
             }
         });
         connect.setOnClickListener(view -> {
@@ -73,8 +70,8 @@ public class ClientMainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy()");
+        super.onDestroy();
 
 //        待处理，退出应用后仍然可以捕获屏幕
 //        if (tcpHelper != null) {

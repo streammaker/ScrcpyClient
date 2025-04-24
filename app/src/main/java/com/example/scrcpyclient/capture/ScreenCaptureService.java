@@ -81,7 +81,6 @@ public class ScreenCaptureService extends Service  {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         Log.d(TAG, "onDestroy()");
         if (screenCaptureThread != null) {
             screenCaptureThread.quit();
@@ -97,6 +96,7 @@ public class ScreenCaptureService extends Service  {
             mediaProjection.stop();
             mediaProjection = null;
         }
+        super.onDestroy();
     }
 
     @Nullable
