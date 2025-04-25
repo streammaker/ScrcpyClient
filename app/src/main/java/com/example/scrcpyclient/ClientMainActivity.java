@@ -32,6 +32,10 @@ public class ClientMainActivity extends AppCompatActivity {
     private TcpHelper tcpHelper;
     private ActivityResultLauncher launcher;
 
+    private Button low_bit;
+    private Button middle_bit;
+    private Button high_bit;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,11 +65,34 @@ public class ClientMainActivity extends AppCompatActivity {
             tcpHelper = new TcpHelper(serverIP, context, launcher);
             tcpHelper.init();
         });
+        low_bit.setOnClickListener(view -> {
+            Intent intent = new Intent("ACTION_BITRATE_CHANGED");
+            intent.putExtra("bit_rate", 100_000);
+            intent.setPackage(getPackageName());
+            sendBroadcast(intent);
+        });
+        middle_bit.setOnClickListener(view -> {
+            Intent intent = new Intent("ACTION_BITRATE_CHANGED");
+            intent.putExtra("bit_rate", 2_000_000);
+            intent.setPackage(getPackageName());
+            sendBroadcast(intent);
+        });
+        high_bit.setOnClickListener(view -> {
+            Intent intent = new Intent("ACTION_BITRATE_CHANGED");
+            intent.putExtra("bit_rate", 8_000_000);
+            intent.setPackage(getPackageName());
+            sendBroadcast(intent);
+        });
     }
 
     private void init() {
         connect = findViewById(R.id.connect);
         ipText = findViewById(R.id.ipText);
+
+        low_bit = findViewById(R.id.low_bit);
+        middle_bit = findViewById(R.id.middle_bit);
+        high_bit = findViewById(R.id.high_bit);
+
     }
 
     @Override

@@ -1,13 +1,16 @@
 package com.example.scrcpyclient.capture;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -27,11 +30,18 @@ public class ScreenCaptureService extends Service  {
     private static final String TAG = ScreenCaptureService.class.getSimpleName();
     private MediaProjection mediaProjection;
     private ScreenCaptureThread screenCaptureThread;
+    private BitRateReceiver bitRateReceiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate !!!");
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("ACTION_BITRATE_CHANGED");
+        bitRateReceiver = new BitRateReceiver();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(bitRateReceiver, intentFilter, Context.RECEIVER_NOT_EXPORTED);
+        }
     }
 
     @Override
@@ -79,6 +89,13 @@ public class ScreenCaptureService extends Service  {
                 .build();
     }
 
+    public void updateBitRate(int newBitRate) {
+        if (screenCaptureThread != null) {
+            Log.d(TAG, "更新bit_rate");
+            screenCaptureThread.updateBitRate(newBitRate);
+        }
+    }
+
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy()");
@@ -96,6 +113,9 @@ public class ScreenCaptureService extends Service  {
             mediaProjection.stop();
             mediaProjection = null;
         }
+        if (bitRateReceiver != null) {
+            unregisterReceiver(bitRateReceiver);
+        }
         super.onDestroy();
     }
 
@@ -103,5 +123,22 @@ public class ScreenCaptureService extends Service  {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    public class BitRateReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "收到广播");
+            if (intent.getAction().equals("ACTION_BITRATE_CHANGED")) {
+                int newBitRate = intent.getIntExtra("bit_rate", 0);
+                if (newBitRate == 0) {
+                    return;
+                } else {
+                    Log.d(TAG, "更新码率 : " + newBitRate);
+                    updateBitRate(newBitRate);
+                }
+            }
+        }
     }
 }
