@@ -25,6 +25,10 @@ import com.example.scrcpyclient.util.Constant;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 public class ScreenCaptureThread extends Thread {
@@ -38,6 +42,9 @@ public class ScreenCaptureThread extends Thread {
     private VirtualDisplay virtualDisplay;
     private DataOutputStream dos;
     private volatile boolean isReleased = false;
+
+    private DatagramSocket datagramSocket;
+//    private DatagramPacket datagramPacket;
 
     public ScreenCaptureThread(MediaProjection mediaProjection, int density) {
         this.mediaProjection = mediaProjection;
@@ -79,6 +86,13 @@ public class ScreenCaptureThread extends Thread {
                 Log.d("NetCallback", "网络不可用");
             }
         });
+
+        try {
+            datagramSocket = new DatagramSocket();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         startScreenCapture();
         Looper.loop();
         if (!isReleased) {
@@ -137,6 +151,9 @@ public class ScreenCaptureThread extends Thread {
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int i, @NonNull MediaCodec.BufferInfo bufferInfo) {
 //                Log.d("luozhenfeng", "onOutputBufferAvailable : " + Thread.currentThread().getName());
+                if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
+                    Log.d(TAG, "关键帧出现，时间戳: " + bufferInfo.presentationTimeUs);
+                }
                 if (!isReleased) {
                     sendEncodedData(i, bufferInfo);
                 }
@@ -161,20 +178,40 @@ public class ScreenCaptureThread extends Thread {
         };
     }
 
+//    private void sendEncodedData(int index, MediaCodec.BufferInfo info) {
+////        Log.d(TAG, "sendEncodedData : " + Thread.currentThread().getName());
+//        ByteBuffer buffer = encoder.getOutputBuffer(index);
+//        if (buffer == null) return;
+//
+//        byte[] packet = new byte[info.size];
+//        buffer.get(packet);
+//
+//        try {
+//            dos.writeInt(packet.length);
+//            Log.d(TAG, index + "---" + packet.length);
+//            dos.write(packet);
+//            dos.flush();
+////            Log.d(TAG, index + "---" + info.size);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        } finally {
+//            encoder.releaseOutputBuffer(index, false);
+//        }
+//    }
+
     private void sendEncodedData(int index, MediaCodec.BufferInfo info) {
-//        Log.d(TAG, "sendEncodedData : " + Thread.currentThread().getName());
         ByteBuffer buffer = encoder.getOutputBuffer(index);
-        if (buffer == null) return;
+        if (buffer == null) {
+            return;
+        }
 
         byte[] packet = new byte[info.size];
         buffer.get(packet);
+        Log.d(TAG, index + "---" + packet.length);
 
         try {
-            dos.writeInt(packet.length);
-            Log.d(TAG, index + "---" + packet.length);
-            dos.write(packet);
-            dos.flush();
-//            Log.d(TAG, index + "---" + info.size);
+            DatagramPacket datagramPacket = new DatagramPacket(packet, 0, packet.length, InetAddress.getByName(TcpHelper.videoServerIp), Constant.UDP_VIDEO_SEND_PORT);
+            datagramSocket.send(datagramPacket);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

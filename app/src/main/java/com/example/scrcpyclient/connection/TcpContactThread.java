@@ -55,8 +55,8 @@ public class TcpContactThread extends Thread {
                     String videoServerIp = new String(receiveData, 0, len);
                     Log.d(TAG, "收到video服务器ip : " + videoServerIp);
                     TcpHelper.saveVideoServerIp(videoServerIp);
-                    tcpVideoThread = new TcpVideoThread(ip, context);
-                    tcpVideoThread.start();
+//                    tcpVideoThread = new TcpVideoThread(ip, context);
+//                    tcpVideoThread.start();
                     isFirst = false;
                 } else {
                     byte[] contentData = Arrays.copyOfRange(receiveData, 0, len);
