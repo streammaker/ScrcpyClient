@@ -104,6 +104,7 @@ public class ScreenCaptureService extends Service  {
         }
         try {
             screenCaptureThread.join();
+            screenCaptureThread = null;
             Log.d(TAG, "screenCaptureThread.join() !!!");
         } catch (Exception e) {
             Log.d(TAG, "screenCaptureThread.join() error !!!");

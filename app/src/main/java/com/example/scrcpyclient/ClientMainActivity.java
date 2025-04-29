@@ -62,6 +62,7 @@ public class ClientMainActivity extends AppCompatActivity {
         });
         connect.setOnClickListener(view -> {
             String serverIP = ipText.getText().toString();
+            Log.d(TAG, "serverIP : " + serverIP);
             tcpHelper = new TcpHelper(serverIP, context, launcher);
             tcpHelper.init();
         });

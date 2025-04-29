@@ -36,8 +36,9 @@ public class ScreenCaptureThread extends Thread {
     private MediaCodec encoder;
     private Surface encoderSurface;
     private VirtualDisplay virtualDisplay;
-    private DataOutputStream dos;
+//    private DataOutputStream dos;
     private volatile boolean isReleased = false;
+    private DataTransmitThread dataTransmitThread;
 
     public ScreenCaptureThread(MediaProjection mediaProjection, int density) {
         this.mediaProjection = mediaProjection;
@@ -47,7 +48,11 @@ public class ScreenCaptureThread extends Thread {
     @Override
     public void run() {
         Log.d(TAG, "run 111 : " + Thread.currentThread().getName());
-        dos = new DataOutputStream(TcpHelper.videoOutputStream);
+//        dos = new DataOutputStream(TcpHelper.videoOutputStream);
+
+        dataTransmitThread = new DataTransmitThread();
+        dataTransmitThread.start();
+
         //不设置子线程的looper的话encoder.setCallbackd设置的回调会绑定到主线程的looper,导致回调在主线程运行，网络请求出错
         Looper.prepare();
         handler = new Handler(Looper.myLooper());
@@ -102,7 +107,7 @@ public class ScreenCaptureThread extends Thread {
         MediaFormat format = MediaFormat.createVideoFormat(
                 MediaFormat.MIMETYPE_VIDEO_AVC, Constant.SCREEN_WIDTH, Constant.SCREEN_HEIGHT);
         format.setInteger(MediaFormat.KEY_BIT_RATE, Constant.BIT_RATE);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, 60);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, 24);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -110,8 +115,10 @@ public class ScreenCaptureThread extends Thread {
 //        }
 
         //扩展选项
+//        可变比特率
         format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
-
+//        恒定比特率
+//        format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
         encoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
         encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         encoder.setCallback(createEncoderCallback());
@@ -137,6 +144,9 @@ public class ScreenCaptureThread extends Thread {
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int i, @NonNull MediaCodec.BufferInfo bufferInfo) {
 //                Log.d("luozhenfeng", "onOutputBufferAvailable : " + Thread.currentThread().getName());
+                if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
+                    Log.d(TAG, "关键帧出现，时间戳: " + bufferInfo.presentationTimeUs);
+                }
                 if (!isReleased) {
                     sendEncodedData(i, bufferInfo);
                 }
@@ -164,16 +174,26 @@ public class ScreenCaptureThread extends Thread {
     private void sendEncodedData(int index, MediaCodec.BufferInfo info) {
 //        Log.d(TAG, "sendEncodedData : " + Thread.currentThread().getName());
         ByteBuffer buffer = encoder.getOutputBuffer(index);
-        if (buffer == null) return;
+        if (buffer == null) {
+            Log.d(TAG, "buffer == null");
+            encoder.releaseOutputBuffer(index, false);
+            return;
+        }
 
         byte[] packet = new byte[info.size];
         buffer.get(packet);
 
+
+        //需要在线程中发送数据，否在当write阻塞的时候会导致编码器也阻塞，
+        //再一直传数据到编码器的话视频帧数据会拿不到编码器缓冲区导致编码器异常然后设备重启
         try {
-            dos.writeInt(packet.length);
-            Log.d(TAG, index + "---" + packet.length);
-            dos.write(packet);
-            dos.flush();
+            if (dataTransmitThread != null) {
+                dataTransmitThread.sendEncodedData(index, packet);
+            }
+//            dos.writeInt(packet.length);
+//            Log.d(TAG, index + "---" + packet.length);
+//            dos.write(packet);
+//            dos.flush();
 //            Log.d(TAG, index + "---" + info.size);
         } catch (Exception e) {
             e.printStackTrace();
@@ -248,6 +268,17 @@ public class ScreenCaptureThread extends Thread {
 //                dos.close();
 //                dos = null;
 //            }
+            if (dataTransmitThread != null) {
+                dataTransmitThread.quit();
+                try {
+                    dataTransmitThread.join();
+                    Log.d(TAG, "dataTransmitThread.join() !!!");
+                    dataTransmitThread = null;
+                } catch (Exception e) {
+                    Log.d(TAG, "dataTransmitThread.join() error !!!");
+                    e.printStackTrace();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
